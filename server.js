@@ -1,8 +1,14 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
 const { Pool } = require("pg");
-
+const cors = require("cors");
 const app = express();
+
+app.use(cors({
+  origin: "https://login-frontend-eta.vercel.app",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true
+}));
 
 // Middleware
 app.use(express.json());
