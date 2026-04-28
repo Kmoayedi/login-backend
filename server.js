@@ -17,7 +17,7 @@ const corsOptions = {
 
 // 👇 DANN ERST BENUTZEN
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+app.options("/*", cors(corsOptions));
 
 app.use(express.json());
 
