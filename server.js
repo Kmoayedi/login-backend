@@ -1,3 +1,21 @@
+const express = require("express");
+const bcrypt = require("bcrypt");
+const { Pool } = require("pg");
+
+const app = express();
+
+// Middleware
+app.use(express.json());
+
+// PostgreSQL Connection (Beispiel)
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: {
+    rejectUnauthorized: false,
+  },
+});
+
+// ROUTE: Register
 app.post("/register", async (req, res) => {
   const { name, email, password } = req.body;
 
@@ -13,4 +31,10 @@ app.post("/register", async (req, res) => {
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
+});
+
+// Server starten
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server läuft auf Port ${PORT}`);
 });
