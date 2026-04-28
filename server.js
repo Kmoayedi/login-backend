@@ -4,7 +4,7 @@ const { Pool } = require("pg");
 const cors = require("cors");
 
 const app = express();
-
+app.use(express.json());
 // 👇 HIER DEFINIEREN (WICHTIG!)
 const corsOptions = {
   origin: [
@@ -15,10 +15,7 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 
-// 👇 DANN ERST BENUTZEN
 app.use(cors(corsOptions));
-
-app.use(express.json());
 
 // TEST ROUTE
 app.get("/", (req, res) => {
