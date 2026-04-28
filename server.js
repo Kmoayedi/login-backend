@@ -29,23 +29,43 @@ const pool = new Pool({
 });
 
 // REGISTER
+// app.post("/register", async (req, res) => {
+//   const { name, email, password } = req.body;
+
+//   try {
+//     const hashed = await bcrypt.hash(password, 10);
+
+//     await pool.query(
+//       "INSERT INTO users (name, email, password) VALUES ($1, $2, $3)",
+//       [name, email, hashed]
+//     );
+
+//     res.json({ message: `Willkommen ${name}! 🎉` });
+//   } catch (err) {
+//     res.status(500).json({ error: err.message });
+//   }
+// });
 app.post("/register", async (req, res) => {
   const { name, email, password } = req.body;
 
   try {
+    console.log("BODY:", req.body); // 👈 zeigt ob Daten ankommen
+
     const hashed = await bcrypt.hash(password, 10);
 
-    await pool.query(
-      "INSERT INTO users (name, email, password) VALUES ($1, $2, $3)",
+    const result = await pool.query(
+      "INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *",
       [name, email, hashed]
     );
 
+    console.log("USER:", result.rows[0]); // 👈 zeigt ob Insert klappt
+
     res.json({ message: `Willkommen ${name}! 🎉` });
   } catch (err) {
+    console.error("REGISTER ERROR:", err); // 👈 DAS IST DER SCHLÜSSEL
     res.status(500).json({ error: err.message });
   }
 });
-
 // LOGIN
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
