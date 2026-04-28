@@ -5,17 +5,20 @@ const cors = require("cors");
 
 const app = express();
 
-app.use(cors({
+// 👇 HIER DEFINIEREN (WICHTIG!)
+const corsOptions = {
   origin: [
     "https://login-frontend-ebon-eta.vercel.app",
     "http://localhost:3000"
   ],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  methods: ["GET", "POST", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
-}));
+};
 
+// 👇 DANN ERST BENUTZEN
 app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
+
 app.use(express.json());
 
 // TEST ROUTE
