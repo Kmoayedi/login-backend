@@ -2,6 +2,8 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const { Pool } = require("pg");
 const cors = require("cors");
+const Stripe = require("stripe");
+const stripe = new Stripe("DEIN_SECRET_KEY");
 
 const app = express();
 app.use(express.json());
@@ -93,7 +95,29 @@ app.post("/login", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+//Payment
+app.post("/create-checkout", async (req, res) => {
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    mode: "payment",
+    line_items: [
+      {
+        price_data: {
+          currency: "eur",
+          product_data: {
+            name: "Premium Zugang",
+          },
+          unit_amount: 500,
+        },
+        quantity: 1,
+      },
+    ],
+    success_url: "https://deinfrontend.vercel.app/success",
+    cancel_url: "https://deinfrontend.vercel.app",
+  });
 
+  res.json({ url: session.url });
+});
 // START
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
