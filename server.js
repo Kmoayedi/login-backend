@@ -143,6 +143,67 @@ app.post("/create-checkout", async (req, res) => {
   }
 });
 
+
+
+
+// ================= BACKEND ADDITIONS (server.js) =================
+// ⚠️ Bestehenden Code NICHT ändern – nur unten hinzufügen
+
+// 1. Middleware (Fake Auth – später JWT)
+app.use((req, res, next) => {
+  req.userId = 1; // 👉 später aus Token holen
+  next();
+});
+
+// 2. GET USER PROFILE
+app.get("/me", async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT id, email, name, COALESCE(balance,0) as balance FROM users WHERE id = $1",
+      [req.userId]
+    );
+
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Fehler beim Laden" });
+  }
+});
+
+// 3. ADD MONEY
+app.post("/deposit", async (req, res) => {
+  const { amount } = req.body;
+
+  try {
+    await pool.query(
+      "UPDATE users SET balance = COALESCE(balance,0) + $1 WHERE id = $2",
+      [amount, req.userId]
+    );
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Deposit Fehler" });
+  }
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // START
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
