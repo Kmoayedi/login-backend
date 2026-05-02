@@ -64,6 +64,7 @@ app.post("/register", async (req, res) => {
     console.log("USER CREATED:", result.rows[0]);
 
     res.json({
+      token:"ok",
       message: "Registrierung erfolgreich",
       user: result.rows[0],
     });
