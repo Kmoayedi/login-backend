@@ -30,7 +30,7 @@ app.use(cors({
 }));
 
 // 🔥 ganz wichtig für Preflight
-app.options("*", cors());
+app.options("/*", cors());
 
 // DB (NEON)
 const pool = new Pool({
