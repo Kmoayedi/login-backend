@@ -29,8 +29,6 @@ app.use(cors({
   allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
-// 🔥 ganz wichtig für Preflight
-app.options("/*", cors());
 
 // DB (NEON)
 const pool = new Pool({
