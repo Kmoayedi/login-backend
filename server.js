@@ -21,7 +21,17 @@ const corsOptions = {
   ],
 };
 
-app.use(cors(corsOptions));
+//app.use(cors(corsOptions));
+const cors = require("cors");
+
+app.use(cors({
+  origin: "*", // 🔥 erstmal offen zum testen
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+}));
+
+// 🔥 ganz wichtig für Preflight
+app.options("*", cors());
 
 // DB (NEON)
 const pool = new Pool({
