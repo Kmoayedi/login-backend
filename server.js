@@ -3,71 +3,71 @@ const bcrypt = require("bcrypt");
 const { Pool } = require("pg");
 const cors = require("cors");
 const Stripe = require("stripe");
-const stripe = new Stripe("DEIN_SECRET_KEY");
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
 app.use(express.json());
-// 👇 HIER DEFINIEREN (WICHTIG!)
+
 const corsOptions = {
   origin: [
     "https://login-frontend-ebon-eta.vercel.app",
     "http://localhost:3000"
   ],
-  methods: ["GET", "POST", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
 };
 
 app.use(cors(corsOptions));
+
+// DB (NEON)
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
 
 // TEST ROUTE
 app.get("/", (req, res) => {
   res.send("Backend läuft 🚀");
 });
 
-// DB
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-});
-
 // REGISTER
-// app.post("/register", async (req, res) => {
-//   const { name, email, password } = req.body;
-
-//   try {
-//     const hashed = await bcrypt.hash(password, 10);
-
-//     await pool.query(
-//       "INSERT INTO users (name, email, password) VALUES ($1, $2, $3)",
-//       [name, email, hashed]
-//     );
-
-//     res.json({ message: `Willkommen ${name}! 🎉` });
-//   } catch (err) {
-//     res.status(500).json({ error: err.message });
-//   }
-// });
 app.post("/register", async (req, res) => {
   const { name, email, password } = req.body;
 
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email und Passwort erforderlich" });
+  }
+
   try {
-    console.log("BODY:", req.body); // 👈 zeigt ob Daten ankommen
+    console.log("REGISTER BODY:", req.body);
 
     const hashed = await bcrypt.hash(password, 10);
 
     const result = await pool.query(
-      "INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING *",
-      [name, email, hashed]
+      `INSERT INTO users (name, email, password) 
+       VALUES ($1, $2, $3) 
+       RETURNING id, email`,
+      [name || "User", email, hashed]
     );
 
-    console.log("USER:", result.rows[0]); // 👈 zeigt ob Insert klappt
+    console.log("USER CREATED:", result.rows[0]);
 
-    res.json({ message: `Willkommen ${name}! 🎉` });
+    res.json({
+      message: "Registrierung erfolgreich",
+      user: result.rows[0],
+    });
+
   } catch (err) {
-    console.error("REGISTER ERROR:", err); // 👈 DAS IST DER SCHLÜSSEL
-    res.status(500).json({ error: err.message });
+    console.error("REGISTER ERROR:", err);
+
+    // 🔴 WICHTIG: Duplicate Email erkennen
+    if (err.code === "23505") {
+      return res.status(400).json({ error: "Email existiert bereits" });
+    }
+
+    res.status(500).json({ error: "Server Fehler" });
   }
 });
+
 // LOGIN
 app.post("/login", async (req, res) => {
   const { email, password } = req.body;
@@ -91,33 +91,42 @@ app.post("/login", async (req, res) => {
     }
 
     res.json({ token: "ok" });
+
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("LOGIN ERROR:", err);
+    res.status(500).json({ error: "Server Fehler" });
   }
 });
-//Payment
-app.post("/create-checkout", async (req, res) => {
-  const session = await stripe.checkout.sessions.create({
-    payment_method_types: ["card"],
-    mode: "payment",
-    line_items: [
-      {
-        price_data: {
-          currency: "eur",
-          product_data: {
-            name: "Premium Zugang",
-          },
-          unit_amount: 500,
-        },
-        quantity: 1,
-      },
-    ],
-    success_url: "https://deinfrontend.vercel.app/success",
-    cancel_url: "https://deinfrontend.vercel.app",
-  });
 
-  res.json({ url: session.url });
+// PAYMENT
+app.post("/create-checkout", async (req, res) => {
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ["card"],
+      mode: "payment",
+      line_items: [
+        {
+          price_data: {
+            currency: "eur",
+            product_data: {
+              name: "Premium Zugang",
+            },
+            unit_amount: 500,
+          },
+          quantity: 1,
+        },
+      ],
+      success_url: "https://deinfrontend.vercel.app/success",
+      cancel_url: "https://deinfrontend.vercel.app",
+    });
+
+    res.json({ url: session.url });
+  } catch (err) {
+    console.error("STRIPE ERROR:", err);
+    res.status(500).json({ error: "Payment Fehler" });
+  }
 });
+
 // START
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
