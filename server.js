@@ -4,7 +4,12 @@ const { Pool } = require("pg");
 const cors = require("cors");
 const Stripe = require("stripe");
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+let stripe;
+
+if (process.env.STRIPE_SECRET_KEY) {
+  const Stripe = require("stripe");
+  stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+}
 
 const app = express();
 app.use(express.json());
@@ -100,6 +105,9 @@ app.post("/login", async (req, res) => {
 
 // PAYMENT
 app.post("/create-checkout", async (req, res) => {
+  if (!stripe) {
+    return res.status(500).json({ error: "Stripe nicht konfiguriert" });
+  }
   try {
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ["card"],
